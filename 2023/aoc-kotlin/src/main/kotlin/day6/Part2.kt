@@ -13,7 +13,7 @@ fun day6p2(input: String): String {
 
     val widthFrac = sqrt(time * time - 4.0 * (record + 1))
     val rounded = widthFrac.toLong()
-    val returnValue = rounded + (time + rounded + 1) % 2
+    val returnValue = sqrt(time * time - 4.0 * (record + 1)).toLong().let { it + (time + it + 1) % 2 }
 
     return returnValue.toString()
 }
