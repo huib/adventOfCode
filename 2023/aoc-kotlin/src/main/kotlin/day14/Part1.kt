@@ -2,15 +2,9 @@ package day14
 
 import day13.transpose
 import getInput
-import kotlin.time.measureTime
 
 fun main() {
     val input = getInput("/input_day14")
-    measureTime {
-        repeat(5000) {
-            day14p1(input)
-        }
-    }.also(::println)
     println(day14p1(input))
 }
 
