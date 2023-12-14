@@ -1,6 +1,7 @@
 package day12
 
 import getInput
+import java.util.*
 
 fun main() {
     val input = getInput("/input_day12")
@@ -41,6 +42,10 @@ class Puzzle(
     fun reversed() = Puzzle(cells.reversed(), clues.reversed())
 
     override fun toString() = "$str ($cells) $clues"
+    override fun hashCode() = Objects.hash(cells, clues)
+    override fun equals(other: Any?): Boolean {
+        return other is Puzzle && other.cells == cells && other.clues == clues
+    }
 
     companion object {
         fun fromString(str: String): Puzzle {
@@ -97,7 +102,8 @@ fun presolveStart(puzzle: Puzzle): Puzzle {
     return puzzle
 }
 
-fun numberOfSolutions(puzzle: Puzzle): Long {
+val cache = mutableMapOf<Puzzle, Long>()
+fun numberOfSolutions(puzzle: Puzzle): Long = cache.getOrPut(puzzle) {
     val simplified = greedySolve(puzzle)
 
     if (simplified.isInfeasible) {
@@ -110,7 +116,7 @@ fun numberOfSolutions(puzzle: Puzzle): Long {
 
     check(simplified.cells[0] == '?') { "simplified starts with ${simplified.cells[0]}" }
 
-    return numberOfSolutions(Puzzle(simplified.cells.drop(1), simplified.clues)) +
+    numberOfSolutions(Puzzle(simplified.cells.drop(1), simplified.clues)) +
         numberOfSolutions(Puzzle("#" + simplified.cells.drop(1), simplified.clues))
 }
 
