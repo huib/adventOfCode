@@ -41,7 +41,7 @@ fun day8p2v2(input: String): String {
         val offset = visited[currentNode to parity]!!
         val cycleLength = steps - offset
         Triple(offset, cycleLength, zNodeIndices.single())
-    }.onEach(::println)
+    }
 
     check(cycleDefs.all { it.second == it.third })
 
