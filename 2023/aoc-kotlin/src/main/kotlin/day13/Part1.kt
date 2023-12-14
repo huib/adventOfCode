@@ -42,6 +42,6 @@ fun findHorizontalMirrorPosition(lines: List<String>): Int {
 
 fun transpose(lines: List<String>): List<String> {
     return List(lines.first().length) { col ->
-        lines.map { it[col] }.toString()
+        lines.map { it[col] }.joinToString("")
     }
 }
