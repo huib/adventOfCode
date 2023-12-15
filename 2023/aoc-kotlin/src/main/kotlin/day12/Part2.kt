@@ -14,7 +14,7 @@ fun day12p2(input: String): String {
 
     val puzzles = lines.map(::unfold).map(Puzzle::fromString)
     val nums = puzzles.mapIndexed { index, puzzle ->
-        println("$index")
+        // println("$index")
         numberOfSolutions(puzzle)
     }
     val returnValue = nums.sum()
