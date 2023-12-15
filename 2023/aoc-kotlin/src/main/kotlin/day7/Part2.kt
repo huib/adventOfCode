@@ -16,7 +16,7 @@ fun day7p2(input: String): String {
             .firstOrNull { (a, b) -> a != b }
             ?.let { (a, b) -> compareValues(a, b) }
             ?: 0
-    }.onEach(::println)
+    }
     val returnValue = cards.mapIndexed { index, hand -> hand.score * (index + 1) }.sum()
 
     return returnValue.toString()

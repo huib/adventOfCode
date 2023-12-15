@@ -1,13 +1,10 @@
 package day4
 
 import getInput
-import kotlin.system.measureNanoTime
 
 fun main() {
     val input = getInput("/input_day4")
-    measureNanoTime {
-        println(day4p2(input))
-    }.also(::println)
+    println(day4p2(input))
 }
 
 fun day4p2(input: String): String {

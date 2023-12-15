@@ -5,10 +5,10 @@ import lcm
 
 fun main() {
     val input = getInput("/input_day8")
-    println(day8p2v2(input))
+    println(day8p2(input))
 }
 
-fun day8p2v2(input: String): String {
+fun day8p2(input: String): String {
     val lines = input.split("\n").map { it.trim() }
     val route = lines.first()
     val nodeMap = lines.drop(2).map(::Node).associateBy(Node::code)
