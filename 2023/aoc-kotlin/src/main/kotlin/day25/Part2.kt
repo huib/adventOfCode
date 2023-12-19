@@ -49,6 +49,7 @@ import day8.day8p2
 import day9.day9p1
 import day9.day9p2
 import getInput
+import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.measureTime
 
@@ -114,9 +115,11 @@ fun day25p2(input: String): String {
     val durations = runs.mapIndexed { index, pair ->
         measureTime { pair.first(pair.second) }
     }
-    val returnValue = durations.mapIndexed { index, duration ->
-        "day ${index / 2 + 1} part ${index % 2 + 1}: $duration"
-    }.joinToString("\n") + "\ntotal: ${durations.reduce(Duration::plus)}"
+    val total = durations.reduce(Duration::plus)
+    val proportions = durations.map { it / total }
+    val returnValue = durations.zip(proportions).mapIndexed { index, (duration, proportion) ->
+        "day ${index / 2 + 1} part ${index % 2 + 1}: $duration (${(proportion * 10_000).roundToInt() / 100.0}%)"
+    }.joinToString("\n") + "\ntotal: $total"
 
     return returnValue.toString()
 }
