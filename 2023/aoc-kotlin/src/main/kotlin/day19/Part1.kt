@@ -34,6 +34,20 @@ class WorkFlow(def: String) {
     fun next(part: MachinePart): String {
         return rules.firstNotNullOf { it.next(part) }
     }
+
+    fun next(cube: HyperCuboid): List<Pair<HyperCuboid, String>> {
+        return buildList {
+            rules.fold(cube) { unmatchedCube, rule ->
+                val (unmatched, matched) = rule.next(unmatchedCube).map { it.key to it.value }.partition { it.second == null }
+                addAll(matched.map { it.first to it.second!! })
+
+                if (unmatched.isEmpty())
+                    return@buildList
+
+                unmatched.single().first
+            }
+        }
+    }
 }
 
 fun ruleOf(def: String): Rule {
@@ -47,37 +61,50 @@ fun ruleOf(def: String): Rule {
 
 interface Rule {
     fun next(part: MachinePart): String?
+    fun next(cube: HyperCuboid): Map<HyperCuboid, String?>
 }
 
 class ConditionalRule(conditionDef: String, private val destination: String) : Rule {
-    val condition: (MachinePart) -> Boolean
+    val catSelector: (MachinePart) -> Int
+    val category: Char
+    val split: Int // split to < and >=
+    val less = conditionDef.contains('<')
 
     init {
         val (ratingCat, valueStr) = conditionDef.split('<', '>')
-        val catSelector = { part: MachinePart ->
-            when (ratingCat) {
-                "x" -> part.x
-                "m" -> part.m
-                "a" -> part.a
-                "s" -> part.s
-                else -> error("odd category: $ratingCat")
-            }
+        category = ratingCat.first()
+        catSelector = when (category) {
+            'x' -> MachinePart::x
+            'm' -> MachinePart::m
+            'a' -> MachinePart::a
+            's' -> MachinePart::s
+            else -> error("odd category: $ratingCat")
         }
         val value = valueStr.toInt()
-        condition = if (conditionDef.contains('<')) {
-            { part -> catSelector(part) < value }
-        } else {
-            { part -> catSelector(part) > value }
-        }
+        split = if (less) value else value + 1
+    }
+
+    private fun condition(part: MachinePart): Boolean {
+        return if (less) catSelector(part) < split else catSelector(part) >= split
     }
 
     override fun next(part: MachinePart): String? {
         return if (condition(part)) destination else null
     }
+
+    override fun next(cube: HyperCuboid): Map<HyperCuboid, String?> {
+        val (lessCube, geqCube) = cube.split(category, split)
+        return if (less) {
+            mapOf(lessCube to destination, geqCube to null)
+        } else {
+            mapOf(lessCube to null, geqCube to destination)
+        }.filterKeys { it.isNotEmpty() }
+    }
 }
 
 class UnconditionalRule(private val destination: String) : Rule {
     override fun next(part: MachinePart) = destination
+    override fun next(cube: HyperCuboid) = mapOf(cube to destination)
 }
 
 fun machinePartOf(def: String): MachinePart {
