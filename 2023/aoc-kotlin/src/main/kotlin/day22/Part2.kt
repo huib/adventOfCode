@@ -8,9 +8,13 @@ fun main() {
 }
 
 fun day22p2(input: String): String {
-    val lines = input.split("\n").map { it.trim() }
+    val bricks = input.split("\n").map { it.trim() }.map(::parseBrick)
 
-    val returnValue = lines.size
+    val (changed, settledBricks) = settle(bricks)
+
+    val returnValue = settledBricks.sumOf { brick ->
+        settle(settledBricks - setOf(brick)).first
+    }
 
     return returnValue.toString()
 }

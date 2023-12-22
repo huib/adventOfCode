@@ -8,15 +8,13 @@ fun main() {
 }
 
 fun day12p2(input: String): String {
+    cache.clear() // fair runtime calculation for repeated trails
     check(Puzzle.IMPOSSIBLE.isInfeasible)
 
     val lines = input.split("\n").map { it.trim() }
 
     val puzzles = lines.map(::unfold).map(Puzzle::fromString)
-    val nums = puzzles.mapIndexed { index, puzzle ->
-        // println("$index")
-        numberOfSolutions(puzzle)
-    }
+    val nums = puzzles.map(::numberOfSolutions)
     val returnValue = nums.sum()
 
     return returnValue.toString()

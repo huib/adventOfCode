@@ -9,6 +9,7 @@ fun main() {
 }
 
 fun day12p1(input: String): String {
+    cache.clear() // fair runtime calculation for repeated trails
     check(Puzzle.IMPOSSIBLE.isInfeasible)
 
     val lines = input.split("\n").map { it.trim() }
