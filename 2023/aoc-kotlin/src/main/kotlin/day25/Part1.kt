@@ -16,6 +16,7 @@ fun day25p1(input: String): String {
         .mapIndexed { index, vertexName -> vertexName to index }
         .toMap()
     val edgesIdx = edges.map { (a, b) -> vertexNameToIndex.getValue(a) to vertexNameToIndex.getValue(b) }
+    val numVertices = vertexNameToIndex.size
 
     Loader.loadNativeLibraries()
     val maxFlow = MaxFlow()
@@ -27,21 +28,21 @@ fun day25p1(input: String): String {
         check(j == i + 1)
     }
 
-    val source = (0 until vertexNameToIndex.size - 1).indexOfFirst { source ->
-        val result = maxFlow.solve(source, vertexNameToIndex.size - 1)
+    (0 until numVertices - 1).first { source ->
+        val result = maxFlow.solve(source, numVertices - 1)
         check(result == MaxFlow.Status.OPTIMAL)
 
         maxFlow.optimalFlow == 3L
     }
 
-    val nbrsReducedGraph = edgesIdx.filterIndexed { edgeIndex, (a, b) ->
+    val nbrsReducedGraph = edgesIdx.filterIndexed { edgeIndex, _ ->
         maxFlow.getFlow(2 * edgeIndex) == 0L && maxFlow.getFlow(2 * edgeIndex + 1) == 0L
     }
         .flatMap { (a, b) -> listOf(a to b, b to a) }
         .groupBy { it.first }
         .mapValues { (v1, e) -> e.map { it.second } }
 
-    val cc = mutableSetOf(vertexNameToIndex.size - 1)
+    val cc = mutableSetOf(numVertices - 1)
     val q = cc.toMutableList()
     while (q.isNotEmpty()) {
         val v = q.removeFirst()
@@ -51,19 +52,7 @@ fun day25p1(input: String): String {
         nbrs.filter(cc::add).onEach(q::add)
     }
 
-    val cc2 = mutableSetOf(source)
-    val q2 = cc2.toMutableList()
-    while (q2.isNotEmpty()) {
-        val v = q2.removeFirst()
-
-        val nbrs = nbrsReducedGraph.getValue(v)
-
-        nbrs.filter(cc2::add).onEach(q2::add)
-    }
-
-    println("total: ${vertexNameToIndex.size}, cc1: ${cc.size}, cc2: ${cc2.size}, others? ${vertexNameToIndex.size - cc.size - cc2.size}")
-
-    val returnValue = cc.size * cc2.size
+    val returnValue = cc.size * (numVertices - cc.size)
 
     return returnValue.toString()
 }
