@@ -3,10 +3,11 @@ package day21
 import day10.nbrs_not_diag
 import getInput
 import java.lang.Math.floorDiv
+import kotlin.time.measureTime
 
 fun main() {
     val input = getInput("/input_day21")
-    println(day21p2(input))
+    measureTime { println(day21p2(input)) }.also(::println)
 }
 
 val width = 131
@@ -16,7 +17,9 @@ fun day21p2(input: String): String {
     val lines = input.split("\n").map { it.trim() }
     val field = InfiniteField(lines)
 
-    val numSteps = 500L // 26501365L
+    // val numSteps = 4 * 131L + 26501365 % 131
+    val numSteps = 26501365L
+    println(numSteps)
 
     val centerCycle = findCycle(field.startState, field::propagateCenter)
     centerCycle.printInfo(numSteps, "center")
@@ -40,62 +43,72 @@ fun day21p2(input: String): String {
     val southCycle = findCycle(field.startState, field::propagateDown)
     southCycle.printInfo(numSteps, "south")
 
-//    (262L..655L).forEach { numSteps ->
-//        val counts = buildList {
-//            repeat(((numSteps - 197) / 131).toInt()) {
-//                add(centerCycle.getState(numSteps + it % 2).size)
-//            }
-//            add(eastCycle.getState(numSteps).size)
+//    buildList {
+//        repeat(((numSteps - 66) / 131).toInt()) {
+//            add(centerCycle.getState(numSteps + it % 2).size)
 //        }
-//
-//        println("$numSteps :  ${counts.sum()}    $counts")
+//        add(eastCycle.getState(numSteps).size)
+//    }.also {
+//        println("east $numSteps :  ${it.sum()}    $it")
 //    }
-//    (262L..655L).forEach { numSteps ->
-//        val counts = buildList {
-//            repeat(((numSteps - 197) / 131).toInt()) {
-//                add(centerCycle.getState(numSteps + it % 2).size)
-//            }
-//            add(westCycle.getState(numSteps).size)
+//
+//    buildList {
+//        repeat(((numSteps - 66) / 131).toInt()) {
+//            add(centerCycle.getState(numSteps + it % 2).size)
 //        }
-//
-//        println("$numSteps :  ${counts.sum()}    $counts")
+//        add(westCycle.getState(numSteps).size)
+//    }.also {
+//        println("west $numSteps :  ${it.sum()}    $it")
 //    }
-//    (262L..655L).forEach { numSteps ->
-//        val counts = buildList {
-//            repeat(((numSteps - 197) / 131).toInt()) {
-//                add(centerCycle.getState(numSteps + it % 2).size)
-//            }
-//            add(northCycle.getState(numSteps).size)
+//
+//    buildList {
+//        repeat(((numSteps - 66) / 131).toInt()) {
+//            add(centerCycle.getState(numSteps + it % 2).size)
 //        }
-//
-//        println("$numSteps :  ${counts.sum()}    $counts")
+//        add(northCycle.getState(numSteps).size)
+//    }.also {
+//        println("north $numSteps :  ${it.sum()}    $it")
 //    }
-//    (197L..655L).forEach { numSteps ->
-//        val numCenterChunks = (numSteps - 197) / 131
-//        val total = ((numCenterChunks + 1) / 2) * centerCycle.getState(numSteps).size +
-//                (numCenterChunks / 2) * centerCycle.getState(numSteps + 1).size +
-//                southCycle.getState(numSteps).size
 //
-//        println("$numSteps :  $total")
+//    buildList {
+//        repeat(((numSteps - 66) / 131).toInt()) {
+//            add(centerCycle.getState(numSteps + it % 2).size)
+//        }
+//        add(southCycle.getState(numSteps).size)
+//    }.also {
+//        println("south $numSteps :  ${it.sum()}    $it")
 //    }
-//    (197L..655L).forEach { numSteps ->
-//        val total = centerCycle.getState(numSteps).size * ((numSteps - NECycle.cycleStart) / NECycle.cycleLength) +
-//                NECycle.getState(numSteps).size
-//        println("$numSteps :  $total")
+//
+//    diagList(numSteps, NECycle, centerCycle).also {
+//        println("NE $numSteps :  ${it.sum()}    $it")
+//    }
+//
+//    diagList(numSteps, SECycle, centerCycle).also {
+//        println("SE $numSteps :  ${it.sum()}    $it")
+//    }
+//
+//    diagList(numSteps, SWCycle, centerCycle).also {
+//        println("SW $numSteps :  ${it.sum()}    $it")
+//    }
+//
+//    diagList(numSteps, NWCycle, centerCycle).also {
+//        println("NW $numSteps :  ${it.sum()}    $it")
 //    }
 
-    (197L..655L).forEach { numSteps ->
-        val r = (numSteps - NECycle.cycleStart) / (NECycle.cycleLength / 2)
-        val r1 = r / 2
-        val r2 = (r + 1) / 2
-        val total = centerCycle.getState(numSteps).size * r1 * r1 +
-                centerCycle.getState(numSteps + 1).size * (r2 - 1) * r2 +
-                r * NECycle.getState(numSteps).size +
-                (r - 1).coerceAtLeast(0) * NECycle.getState(numSteps + NECycle.cycleLength / 2).size
-        println("$numSteps :  $total")
-    }
-
-    val returnValue = 0
+    val returnValue = quadrantCount(numSteps, NECycle, centerCycle) +
+        quadrantCount(numSteps, SECycle, centerCycle) +
+        quadrantCount(numSteps, SWCycle, centerCycle) +
+        quadrantCount(numSteps, NWCycle, centerCycle) +
+        buildList {
+            val r = (numSteps - 66) / 131
+            add(centerCycle.getState(numSteps + 1).size * 4 * (r / 2))
+            add(centerCycle.getState(numSteps).size * 4 * ((r + 1) / 2))
+            add(northCycle.getState(numSteps).size)
+            add(southCycle.getState(numSteps).size)
+            add(eastCycle.getState(numSteps).size)
+            add(westCycle.getState(numSteps).size)
+        }.sum() -
+        3 * centerCycle.getState(numSteps).size
 
     return returnValue.toString()
 }
@@ -110,6 +123,34 @@ fun diagonalCycle(
         0 to field.height - 1 in step3
     } + 2
     return findCycle(SWCorner, field::propagateCenter).states.loop(offset = stepsToCorner, length = field.width + field.height) // TODO: calc offset
+}
+
+fun diagList(
+    numSteps: Long,
+    cycleData: CycleData<Triple<Pointset, Pointset, Pointset>>,
+    centerCycle: CycleData<Triple<Pointset, Pointset, Pointset>>,
+) = buildList {
+    repeat(((numSteps - cycleData.cycleStart) / (cycleData.cycleLength / 2)).toInt()) {
+        add(centerCycle.getState(numSteps + 1 + it % 2).size)
+    }
+    add(cycleData.getState(numSteps).size)
+    add(cycleData.getState(numSteps + cycleData.cycleLength / 2).size)
+}
+
+fun quadrantCount(
+    numSteps: Long,
+    cycleData: CycleData<Triple<Pointset, Pointset, Pointset>>,
+    centerCycle: CycleData<Triple<Pointset, Pointset, Pointset>>,
+): Long {
+    val x = (numSteps - cycleData.cycleStart) / (cycleData.cycleLength / 2) - 1
+
+    val halfXUp = (x + 1) / 2
+    val halfXDn = x / 2
+
+    return halfXUp * halfXUp * centerCycle.getState(numSteps).size +
+            halfXDn * (halfXDn + 1) * centerCycle.getState(numSteps + 1).size +
+            (x + 1) * cycleData.getState(numSteps).size +
+            (x + 2) * cycleData.getState(numSteps + cycleData.cycleLength / 2).size
 }
 
 fun CycleData<Triple<Pointset, Pointset, Pointset>>.printInfo(numSteps: Long, label: String) {
@@ -127,7 +168,22 @@ val Triple<Pointset, Pointset, Pointset>.chunkSummary: String
             counter[chunk] = counter[chunk]?.let { it + 1 } ?: 1
         }
 
-        return counter.toString()
+        val minX = counter.keys.minOf { (x, y) -> x }
+        val maxX = counter.keys.maxOf { (x, y) -> x }
+        val minY = counter.keys.minOf { (x, y) -> y }
+        val maxY = counter.keys.maxOf { (x, y) -> y }
+
+
+
+        return buildString {
+            (minY..maxY).forEach { y ->
+                (minX..maxX).forEach { x ->
+                    append(counter[x to y])
+                    append("    ")
+                }
+                appendLine()
+            }
+        }
     }
 
 val Triple<Pointset, Pointset, Pointset>.size: Long
@@ -141,6 +197,7 @@ val InfiniteField.startState
     get() = Triple<Pointset, Pointset, Pointset>(setOf(), setOf(), setOf(startPosition))
 
 typealias Pointset = Set<Pair<Int, Int>>
+typealias MutablePointSet = MutableSet<Pair<Int, Int>>
 class InfiniteField(val lines: List<String>) {
     val width = lines.first().length
     val height = lines.size
@@ -170,6 +227,28 @@ class InfiniteField(val lines: List<String>) {
             }
             Triple(step2, step1 + step3, step4)
         }
+    }
+
+    fun fastPropagate(steps123: Triple<MutablePointSet, MutablePointSet, Pointset>) = fastPropagate(steps123.first, steps123.second, steps123.third)
+    fun fastPropagate(step1: MutablePointSet, step2: MutablePointSet, step3: Pointset): Triple<MutablePointSet, MutablePointSet, Pointset> {
+        val step4 = step3.flatMapTo(mutableSetOf()) { pos ->
+            nbrs_not_diag(pos)
+                .filterNot(step2::contains)
+                .filter(::isPassable)
+        }
+        step1.addAll(step3)
+        return Triple(step2, step1, step4)
+    }
+
+    var lastState = Triple<MutablePointSet, MutablePointSet, Pointset>(mutableSetOf(), mutableSetOf(), setOf(startPosition))
+    val countCache = mutableListOf(lastState.size)
+    fun getCount(numSteps: Long): Long {
+        while (numSteps >= countCache.size) {
+            lastState = fastPropagate(lastState)
+            countCache.add(lastState.size)
+        }
+
+        return countCache[numSteps.toInt()]
     }
 
     fun propagateRight(steps123: Triple<Pointset, Pointset, Pointset>): Triple<Pointset, Pointset, Pointset> {
