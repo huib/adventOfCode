@@ -3,11 +3,10 @@ package day21
 import day10.nbrs_not_diag
 import getInput
 import java.lang.Math.floorDiv
-import kotlin.time.measureTime
 
 fun main() {
     val input = getInput("/input_day21")
-    measureTime { println(day21p2(input)) }.also(::println)
+    println(day21p2(input))
 }
 
 val width = 131
@@ -19,29 +18,28 @@ fun day21p2(input: String): String {
 
     // val numSteps = 4 * 131L + 26501365 % 131
     val numSteps = 26501365L
-    println(numSteps)
 
     val centerCycle = findCycle(field.startState, field::propagateCenter)
-    centerCycle.printInfo(numSteps, "center")
-    centerCycle.printInfo(numSteps + 1, "offcenter")
+    // centerCycle.printInfo(numSteps, "center")
+    // centerCycle.printInfo(numSteps + 1, "offcenter")
 
     val NECycle = diagonalCycle(centerCycle, field, 0 to field.height - 1)
-    NECycle.printInfo(numSteps, "NE")
+    // NECycle.printInfo(numSteps, "NE")
     val NWCycle = diagonalCycle(centerCycle, field, field.width - 1 to field.height - 1)
-    NWCycle.printInfo(numSteps, "NW")
+    // NWCycle.printInfo(numSteps, "NW")
     val SWCycle = diagonalCycle(centerCycle, field, field.width - 1 to 0)
-    SWCycle.printInfo(numSteps, "SW")
+    // SWCycle.printInfo(numSteps, "SW")
     val SECycle = diagonalCycle(centerCycle, field, 0 to 0)
-    SECycle.printInfo(numSteps, "SE")
+    // SECycle.printInfo(numSteps, "SE")
 
     val westCycle = findCycle(field.startState, field::propagateLeft)
-    westCycle.printInfo(numSteps, "west")
+    // westCycle.printInfo(numSteps, "west")
     val northCycle = findCycle(field.startState, field::propagateUp)
-    northCycle.printInfo(numSteps, "north")
+    // northCycle.printInfo(numSteps, "north")
     val eastCycle = findCycle(field.startState, field::propagateRight)
-    eastCycle.printInfo(numSteps, "east")
+    // eastCycle.printInfo(numSteps, "east")
     val southCycle = findCycle(field.startState, field::propagateDown)
-    southCycle.printInfo(numSteps, "south")
+    // southCycle.printInfo(numSteps, "south")
 
 //    buildList {
 //        repeat(((numSteps - 66) / 131).toInt()) {
