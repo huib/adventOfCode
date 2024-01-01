@@ -12,17 +12,8 @@ fun day23p1(input: String): String {
     val lines = input.split("\n").map { it.trim() }
 
     val vertices = createGraph(lines)
-    val startVertex = vertices.first()
-    val endVertex = vertices.last()
 
-    val undo = vertices
-        .drop(1)
-        .dropLast(1)
-        .reduce()
-
-    val returnValue = startVertex.outNbrs[endVertex]
-
-    return returnValue.toString()
+    return findLongestPath(vertices).toString()
 }
 
 fun createGraph(lines: List<String>): List<Vertex<Char>> {
@@ -129,6 +120,13 @@ class Vertex<T>(
 
     private val mutableInNbrs: MutableMap<Vertex<T>, Int> = inNbrs.toMutableMap()
 
+    fun reachable(from: Vertex<T>, visited: MutableSet<Vertex<T>> = mutableSetOf()): Boolean {
+        return this == from || inNbrs.keys.filterNot(visited::contains).any {
+            visited.add(it)
+            it.reachable(from = from, visited)
+        }
+    }
+
     fun addNeighbor(nbr: Vertex<T>, weight: Int = 1): () -> Unit {
         val undo1 = addOutNeighbor(nbr, weight)
         val undo2 = addInNeighbor(nbr, weight)
@@ -197,16 +195,16 @@ class Vertex<T>(
         }
     }
 
-    fun removeAllNeighbors(): () -> Unit {
-        val undo1 = removeAllInNeighbors()
-        val undo2 = removeAllOutNeighbors()
+    fun removeAllNeighbors(exceptIn: Set<Vertex<T>> = emptySet(), exceptOut: Set<Vertex<T>> = emptySet()): () -> Unit {
+        val undo1 = removeAllInNeighbors(exceptIn)
+        val undo2 = removeAllOutNeighbors(exceptOut)
         return { undo2(); undo1() }
     }
 
-    fun removeAllOutNeighbors(): () -> Unit {
+    fun removeAllOutNeighbors(except: Set<Vertex<T>> = emptySet()): () -> Unit {
         val oldOutNeighbors = mutableOutNbrs.toMap()
 
-        mutableOutNbrs.keys.toList().forEach {
+        mutableOutNbrs.keys.filterNot(except::contains).forEach {
             it.removeInNeighbor(this)
         }
 
@@ -217,10 +215,10 @@ class Vertex<T>(
         }
     }
 
-    fun removeAllInNeighbors(): () -> Unit {
+    fun removeAllInNeighbors(except: Set<Vertex<T>> = emptySet()): () -> Unit {
         val oldInNeighbors = mutableInNbrs.toMap()
 
-        mutableInNbrs.keys.toList().forEach {
+        mutableInNbrs.keys.filterNot(except::contains).forEach {
             it.removeOutNeighbor(this)
         }
 

@@ -11,18 +11,52 @@ fun main() {
 fun day23p2(input: String): String {
     val lines = input.split("\n").map { it.trim() }
 
-    val vertices = createGraphPart2(lines).also { println(it.size) }
+    val vertices = createGraphPart2(lines)
+
+    val returnValue = findLongestPath(vertices)
+
+    check(returnValue > 4042) { "answer $returnValue to low, should be > 6270" }
+    return returnValue.toString()
+}
+
+fun findLongestPath(vertices: List<Vertex<Char>>, lb: Int = 0): Int {
     val startVertex = vertices.first().apply { removeAllInNeighbors() }
     val endVertex = vertices.last().apply { removeAllOutNeighbors() }
+    val otherVertices = vertices.drop(1).dropLast(1)
 
-    val internalVertices = vertices
-        .drop(1)
-        .dropLast(1)
-        .reduce()
+    val undoReduce = otherVertices.reduce()
 
-    val returnValue = startVertex.outNbrs[endVertex]
+    if (!endVertex.reachable(from = startVertex)) {
+        undoReduce()
+        return lb
+    }
+    val ub = vertices.sumOf { it.outNbrs.values.sum() }
+    if (ub <= lb) {
+        undoReduce()
+        return lb
+    }
 
-    return returnValue.toString()
+    val longestPath = if (endVertex in startVertex.outNbrs) {
+        startVertex.outNbrs.getValue(endVertex)
+    } else {
+        val firstSplitVertex = startVertex.outNbrs.keys.singleOrNull() ?: startVertex
+        val allNeighbors = firstSplitVertex.outNbrs.keys.toList()
+        allNeighbors.fold(lb) { lb, nbr ->
+            val addAllNeighborsBack = firstSplitVertex.removeAllNeighbors(
+                exceptIn = setOf(startVertex),
+                exceptOut = setOf(nbr),
+            )
+            val longestPath = findLongestPath(vertices, lb)
+            addAllNeighborsBack()
+
+            maxOf(lb, longestPath)
+        }
+    }
+
+    if (longestPath > lb) println(longestPath)
+
+    undoReduce()
+    return longestPath
 }
 
 fun createGraphPart2(lines: List<String>): List<Vertex<Char>> {
