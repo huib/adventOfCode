@@ -11,11 +11,11 @@ fun main() {
 fun day23p1(input: String): String {
     val lines = input.split("\n").map { it.trim() }
 
-    val vertices = createGraph(lines).also { println(it.size) }
+    val vertices = createGraph(lines)
     val startVertex = vertices.first()
     val endVertex = vertices.last()
 
-    val internalVertices = vertices
+    val undo = vertices
         .drop(1)
         .dropLast(1)
         .reduce()
@@ -46,19 +46,22 @@ fun createGraph(lines: List<String>): List<Vertex<Char>> {
     return posToVertex.values.toList()
 }
 
-fun <T> List<Vertex<T>>.reduce() {
+fun <T> List<Vertex<T>>.reduce(): () -> Unit {
+    val undoStack = mutableListOf<() -> Unit>()
     var list = this
 
     do {
         val previousSize = list.size
         list = list.filter { it.inNbrs.isNotEmpty() && it.outNbrs.isNotEmpty() }
-            .onEach(::contract)
+            .onEach { contract(it).also(undoStack::add) }
             .filter { (it.inNbrs.keys + it.outNbrs.keys).size > 1 }
-            .also { println(it.size) }
     } while (list.isNotEmpty() && list.size < previousSize)
+
+    return { undoStack.reversed().forEach { it() } }
 }
 
-fun <T> contract(vertex: Vertex<T>) {
+fun <T> contract(vertex: Vertex<T>): () -> Unit {
+    val undoStack = mutableListOf<() -> Unit>()
 //    if (vertex.inNbrs.size == 1 && vertex.outNbrs.size == 1) {
 //        val (inNbr, weight1) = vertex.inNbrs.entries.single()
 //        val (outNbr, weight2) = vertex.outNbrs.entries.single()
@@ -73,9 +76,11 @@ fun <T> contract(vertex: Vertex<T>) {
         vertex.outNbrs.forEach { (outNbr, weight2) ->
             if (inNbr != outNbr) {
                 inNbr.addOutNeighbor(outNbr, weight1 + weight2)
+                    .also(undoStack::add)
             }
         }
         vertex.removeAllNeighbors()
+            .also(undoStack::add)
     }
 
     if (vertex.outNbrs.size == 1) {
@@ -83,9 +88,11 @@ fun <T> contract(vertex: Vertex<T>) {
         vertex.inNbrs.forEach { (inNbr, weight2) ->
             if (inNbr != outNbr) {
                 outNbr.addInNeighbor(inNbr, weight1 + weight2)
+                    .also(undoStack::add)
             }
         }
         vertex.removeAllNeighbors()
+            .also(undoStack::add)
     }
 
     if (vertex.inNbrs.size == 2 && vertex.inNbrs.keys == vertex.outNbrs.keys) {
@@ -94,10 +101,15 @@ fun <T> contract(vertex: Vertex<T>) {
 
         if (nbr1 !in nbr2.outNbrs) {
             nbr1.addNeighbor(nbr2, weight1 + weight2)
+                .also(undoStack::add)
             vertex.removeNeighbor(nbr1)
+                .also(undoStack::add)
             vertex.removeNeighbor(nbr2)
+                .also(undoStack::add)
         }
     }
+
+    return { undoStack.reversed().forEach { it() } }
 }
 
 class Vertex<T>(
@@ -117,56 +129,105 @@ class Vertex<T>(
 
     private val mutableInNbrs: MutableMap<Vertex<T>, Int> = inNbrs.toMutableMap()
 
-    fun addNeighbor(nbr: Vertex<T>, weight: Int = 1) {
-        addOutNeighbor(nbr, weight)
-        addInNeighbor(nbr, weight)
+    fun addNeighbor(nbr: Vertex<T>, weight: Int = 1): () -> Unit {
+        val undo1 = addOutNeighbor(nbr, weight)
+        val undo2 = addInNeighbor(nbr, weight)
+        return { undo2(); undo1() }
     }
 
-    fun addOutNeighbor(nbr: Vertex<T>, weight: Int = 1) {
-        val newWeight = maxOf(weight, mutableOutNbrs[nbr] ?: 0)
-        if (mutableOutNbrs.put(nbr, newWeight) != newWeight) {
-            nbr.addInNeighbor(this, newWeight)
+    fun addOutNeighbor(nbr: Vertex<T>, weight: Int = 1): () -> Unit {
+        val oldWeight = mutableOutNbrs[nbr]
+        val newWeight = maxOf(weight, oldWeight ?: 0)
+        return if (mutableOutNbrs.put(nbr, newWeight) != newWeight) {
+            val undo = nbr.addInNeighbor(this, newWeight);
+            {
+                undo()
+                if (oldWeight == null) {
+                    mutableOutNbrs.remove(nbr)
+                } else {
+                    mutableOutNbrs[nbr] = oldWeight
+                }
+            }
+        } else {
+            {}
         }
     }
 
-    fun addInNeighbor(nbr: Vertex<T>, weight: Int = 1) {
+    fun addInNeighbor(nbr: Vertex<T>, weight: Int = 1): () -> Unit {
+        val oldWeight = mutableInNbrs[nbr]
         val newWeight = maxOf(weight, mutableInNbrs[nbr] ?: 0)
-        if (mutableInNbrs.put(nbr, newWeight) != newWeight) {
-            nbr.addOutNeighbor(this, newWeight)
+        return if (mutableInNbrs.put(nbr, newWeight) != newWeight) {
+            val undo = nbr.addOutNeighbor(this, newWeight);
+            {
+                undo()
+                if (oldWeight == null) {
+                    mutableInNbrs.remove(nbr)
+                } else {
+                    mutableInNbrs[nbr] = oldWeight
+                }
+            }
+        } else {
+            {}
         }
     }
 
-    fun removeNeighbor(nbr: Vertex<T>) {
-        removeInNeighbor(nbr)
-        removeOutNeighbor(nbr)
+    fun removeNeighbor(nbr: Vertex<T>): () -> Unit {
+        val undo1 = removeInNeighbor(nbr)
+        val undo2 = removeOutNeighbor(nbr)
+        return { undo2(); undo1() }
     }
 
-    fun removeOutNeighbor(nbr: Vertex<T>) {
-        if (mutableOutNbrs.remove(nbr) != null) {
-            nbr.removeInNeighbor(this)
+    fun removeOutNeighbor(nbr: Vertex<T>): () -> Unit {
+        val oldWeight = mutableOutNbrs.remove(nbr)
+        return if (oldWeight != null) {
+            nbr.removeInNeighbor(this);
+            { addOutNeighbor(nbr, oldWeight) }
+        } else {
+            {}
         }
     }
 
-    fun removeInNeighbor(nbr: Vertex<T>) {
-        if (mutableInNbrs.remove(nbr) != null) {
-            nbr.removeOutNeighbor(this)
+    fun removeInNeighbor(nbr: Vertex<T>): () -> Unit {
+        val oldWeight = mutableInNbrs.remove(nbr)
+        return if (oldWeight != null) {
+            nbr.removeOutNeighbor(this);
+            { addInNeighbor(nbr, oldWeight) }
+        } else {
+            {}
         }
     }
 
-    fun removeAllNeighbors() {
-        removeAllInNeighbors()
-        removeAllOutNeighbors()
+    fun removeAllNeighbors(): () -> Unit {
+        val undo1 = removeAllInNeighbors()
+        val undo2 = removeAllOutNeighbors()
+        return { undo2(); undo1() }
     }
 
-    fun removeAllOutNeighbors() {
+    fun removeAllOutNeighbors(): () -> Unit {
+        val oldOutNeighbors = mutableOutNbrs.toMap()
+
         mutableOutNbrs.keys.toList().forEach {
             it.removeInNeighbor(this)
         }
+
+        return {
+            oldOutNeighbors.entries.forEach { (nbr, weight) ->
+                addOutNeighbor(nbr, weight)
+            }
+        }
     }
 
-    fun removeAllInNeighbors() {
+    fun removeAllInNeighbors(): () -> Unit {
+        val oldInNeighbors = mutableInNbrs.toMap()
+
         mutableInNbrs.keys.toList().forEach {
             it.removeOutNeighbor(this)
+        }
+
+        return {
+            oldInNeighbors.entries.forEach { (nbr, weight) ->
+                addInNeighbor(nbr, weight)
+            }
         }
     }
 
