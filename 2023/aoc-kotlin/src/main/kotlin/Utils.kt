@@ -2,6 +2,8 @@
 fun getInput(path: String): String =
     object {}.javaClass.getResource(path)?.readText() ?: error("file not found: $path")
 
+fun lcm(vararg values: Long) = lcm(values.toList())
+
 // source: https://www.baeldung.com/kotlin/lcm#:~:text=The%20findLCM()%20function%20computes,it's%20divisible%20by%20both%20numbers.
 fun lcm(values: List<Long>): Long {
     var result = values[0]
