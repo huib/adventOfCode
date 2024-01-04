@@ -113,13 +113,17 @@ fun day25p2(input: String): String {
         ::day25p1 to getInput("/input_day25"),
     )
     val durations = runs.map { (runner, input) ->
-        repeat(2) { runner(input) }
-        measureTime { repeat(10) { runner(input) } } / 10
+        if (runner == ::day23p2) {
+            measureTime { repeat(1) { runner(input) } } / 1
+        } else {
+            runner(input)
+            measureTime { repeat(5) { runner(input) } } / 5
+        }
     }
     val total = durations.reduce(Duration::plus)
     val proportions = durations.map { it / total }
-    val returnValue = "|Day|Part|Time|Percentage of total time|\n" +
-            "|--:|--:|--:|--:|\n" +
+    val returnValue = "|Day|Part|Time|% of total|Notes|\n" +
+            "|--:|--:|--:|--:|:--|\n" +
             durations.zip(proportions).mapIndexed { index, (duration, proportion) ->
             "| ${index / 2 + 1} | ${index % 2 + 1} | $duration | ${(proportion * 10_000).roundToInt() / 100.0}% |"
         }.joinToString("\n") + "\n\nTotal time: $total"

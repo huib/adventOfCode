@@ -53,8 +53,6 @@ fun findLongestPath(vertices: List<Vertex<Char>>, lb: Int = 0): Int {
         }
     }
 
-    if (longestPath > lb) println(longestPath)
-
     undoReduce()
     return longestPath
 }
