@@ -9,6 +9,7 @@ fun main() {
 }
 
 fun day20p2(input: String): String {
+    val nameOfFinalModule = "rx"
     val moduleDefinitions = input.split("\n").map(::parseModule)
     val modules = moduleDefinitions.associate { (name, _, type) ->
         name to type.constructor(name)
@@ -21,41 +22,34 @@ fun day20p2(input: String): String {
         currentModule.output.addAll(destinationModules)
         destinationModules.onEach { it.input.add(currentModule) }
     }
-    val button: Module = UntypedModule("button")
 
-    val bitMods = listOf("cd", "sq", "mj", "pq", "tt", "zq", "zg", "bk", "fz", "bn", "fx", "gb")
-    val inputs = modules["th"]!!.input.toSet()
-    val state = (modules["th"] as ConjunctionModule).lastReceived
-    println("start")
-    repeat(8200) { numPresses ->
-        val pulseQueue = mutableListOf(Triple(Pulse.LOW, button, modules.getValue("broadcaster")))
-        while (pulseQueue.isNotEmpty()) {
-            val (pulse, sender, receiver) = pulseQueue.removeFirst()
-            pulseQueue.addAll(receiver.receive(sender, pulse))
-        }
-
-        bitMods
-            .map(modules::getValue)
-            .map { module ->
-                if (module in inputs) {
-                    state.getValue(module)
-                } else {
-                    null
-                } to (module as FlipFlopModule).isOn
+    val finalModule = modules[nameOfFinalModule]!!
+    val finalConjMod = finalModule.input.single()
+    val counterConjMods = finalConjMod.input.map { it.input.single() }
+    val countersBits = modules["broadcaster"]!!.output.map {
+        var flipFlop: Module? = it
+        buildList {
+            while (flipFlop != null) {
+                add(flipFlop!!)
+                flipFlop = (flipFlop!!.output - counterConjMods).singleOrNull()
             }
-            .joinToString("") { when(it) {
-                Pulse.HIGH to true -> "H"
-                Pulse.HIGH to false -> "h"
-                Pulse.LOW to true -> "L"
-                Pulse.LOW to false -> "l"
-                null to true -> "_"
-                null to false -> " "
-                else -> "#"
-            } }
-            .also { println("$numPresses : $it") }
+        }
+    }
+    val cycleLengths = countersBits.map { counterBits ->
+        check(counterBits.size <= Long.SIZE_BITS)
+        var bitMask = 1
+        counterBits.fold(0L) { cycleLength, module ->
+            val cycleLength = if ((module.output intersect counterConjMods).isNotEmpty()) {
+                cycleLength + bitMask
+            } else {
+                cycleLength
+            }
+            bitMask = bitMask shl 1
+            cycleLength
+        }
     }
 
-    val returnValue = lcm(3793, 4019, 4003, 3947)
+    val returnValue = lcm(cycleLengths)
 
     return returnValue.toString()
 }

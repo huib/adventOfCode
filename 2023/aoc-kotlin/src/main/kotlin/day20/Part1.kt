@@ -110,18 +110,7 @@ class ConjunctionModule(
     override fun receive(source: Module, pulse: Pulse): List<Triple<Pulse, Module, Module>> {
         lastReceived[source] = pulse
 
-        if (pulse == Pulse.HIGH && name == "mg") {
-            val stateStr = input.map(lastReceived::get).joinToString("") { when(it) {
-                Pulse.HIGH -> "h"
-                Pulse.LOW -> "l"
-                null -> "_"
-            } }
-
-            println("mg received HIGH pulse, new state: $stateStr")
-        }
-
         return if (input.map(lastReceived::getValue).all { it == Pulse.HIGH }) {
-            if (name == "th") println("th: PULSE LOW!")
             output.map { Triple(Pulse.LOW, this, it) }
         } else {
             output.map { Triple(Pulse.HIGH, this, it) }
