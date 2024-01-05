@@ -24,13 +24,22 @@ fun findLongestPath(vertices: List<Vertex<Char>>, lb: Int = 0): Int {
     val endVertex = vertices.last().apply { removeAllOutNeighbors() }
     val otherVertices = vertices.drop(1).dropLast(1)
 
-    val undoReduce = otherVertices.reduce()
+    return findLongestPath(startVertex, endVertex, otherVertices, lb)
+}
+
+fun findLongestPath(
+    startVertex: Vertex<Char>,
+    endVertex: Vertex<Char>,
+    otherVertices: List<Vertex<Char>>,
+    lb: Int,
+): Int {
+    val (undoReduce, reducedVertices) = otherVertices.reduce()
 
     if (!endVertex.reachable(from = startVertex)) {
         undoReduce()
         return lb
     }
-    val ub = vertices.sumOf { it.outNbrs.values.sum() }
+    val ub = reducedVertices.sumOf { it.outNbrs.values.sum() } + startVertex.outNbrs.values.sum()
     if (ub <= lb) {
         undoReduce()
         return lb
@@ -46,7 +55,7 @@ fun findLongestPath(vertices: List<Vertex<Char>>, lb: Int = 0): Int {
                 exceptIn = setOf(startVertex),
                 exceptOut = setOf(nbr),
             )
-            val longestPath = findLongestPath(vertices, lb)
+            val longestPath = findLongestPath(startVertex, endVertex, reducedVertices, lb)
             addAllNeighborsBack()
 
             maxOf(lb, longestPath)

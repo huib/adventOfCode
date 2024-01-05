@@ -37,18 +37,18 @@ fun createGraph(lines: List<String>): List<Vertex<Char>> {
     return posToVertex.values.toList()
 }
 
-fun <T> List<Vertex<T>>.reduce(): () -> Unit {
+fun <T> List<Vertex<T>>.reduce(): Pair<() -> Unit, List<Vertex<T>>> {
     val undoStack = mutableListOf<() -> Unit>()
-    var list = this
+    var list = this.filter { it.inNbrs.isNotEmpty() || it.outNbrs.isNotEmpty() }
 
     do {
         val previousSize = list.size
-        list = list.filter { it.inNbrs.isNotEmpty() && it.outNbrs.isNotEmpty() }
+        list = list
             .onEach { contract(it).also(undoStack::add) }
-            .filter { (it.inNbrs.keys + it.outNbrs.keys).size > 1 }
+            .filter { it.inNbrs.isNotEmpty() || it.outNbrs.isNotEmpty() }
     } while (list.isNotEmpty() && list.size < previousSize)
 
-    return { undoStack.reversed().forEach { it() } }
+    return { undoStack.reversed().forEach { it() } } to list
 }
 
 fun <T> contract(vertex: Vertex<T>): () -> Unit {
